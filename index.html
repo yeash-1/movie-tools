@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Zone</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass {
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+        .active-tab {
+            color: #ef4444;
+        }
+        body {
+            background: radial-gradient(circle at top right, rgba(239, 68, 68, 0.15), transparent 40%), #0a0a0a;
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen pb-24 font-sans selection:bg-red-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="glass sticky top-0 z-50 px-4 py-3 flex items-center justify-between border-b border-red-500/20">
+        <div class="flex items-center gap-2">
+            <span class="text-red-600 text-2xl font-bold tracking-wider"><i class="fa-solid fa-clapperboard"></i> MOVIE ZONE</span>
+        </div>
+        <div id="db-status-badge" class="text-xs px-2 py-1 rounded bg-yellow-950/50 text-yellow-400 border border-yellow-500/30">
+            Connecting Cloud...
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 space-y-6">
+
+        <!-- TAB 1: TMDB SEARCH & FEED -->
+        <section id="tab-tmdb" class="tab-content space-y-6">
+            <!-- Magic Search Box -->
+            <div class="glass p-4 rounded-2xl space-y-3">
+                <h2 class="text-lg font-semibold text-red-500"><i class="fa-solid fa-wand-magic-sparkles"></i> Magic Search</h2>
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Search movies or series..." class="w-full bg-zinc-900/80 border border-zinc-700/60 focus:border-red-500 rounded-xl px-4 py-3 text-sm focus:outline-none transition-all pr-12">
+                    <button id="search-btn" class="absolute right-2 top-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg text-sm transition-colors">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Results Container -->
+            <div id="search-results-section" class="hidden space-y-4">
+                <h3 class="text-md font-semibold text-red-400 flex items-center justify-between">
+                    <span>Search Results</span>
+                    <button id="close-search" class="text-xs text-zinc-400 hover:text-white">Clear</button>
+                </h3>
+                <div id="search-results" class="grid grid-cols-1 gap-4"></div>
+            </div>
+
+            <!-- Trending Feed -->
+            <div class="space-y-4">
+                <h3 class="text-md font-semibold text-zinc-300 border-l-4 border-red-500 pl-2">Trending Today</h3>
+                <div id="trending-feed" class="grid grid-cols-1 gap-4">
+                    <p class="text-xs text-zinc-500">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Popular Movies Feed -->
+            <div class="space-y-4">
+                <h3 class="text-md font-semibold text-zinc-300 border-l-4 border-red-500 pl-2">Popular Movies</h3>
+                <div id="popular-movies" class="grid grid-cols-1 gap-4">
+                    <p class="text-xs text-zinc-500">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Popular Series Feed -->
+            <div class="space-y-4">
+                <h3 class="text-md font-semibold text-zinc-300 border-l-4 border-red-500 pl-2">Popular Series</h3>
+                <div id="popular-series" class="grid grid-cols-1 gap-4">
+                    <p class="text-xs text-zinc-500">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: POST CREATOR -->
+        <section id="tab-post" class="tab-content hidden space-y-6">
+            <div class="glass p-5 rounded-2xl space-y-4">
+                <h2 class="text-lg font-semibold text-red-500 border-b border-red-500/20 pb-2"><i class="fa-solid fa-pen-to-square"></i> Generate Post</h2>
+                
+                <!-- Poster Preview -->
+                <div id="poster-preview-container" class="hidden flex justify-center">
+                    <img id="poster-preview" src="" alt="Poster" class="w-28 rounded-lg shadow-lg border border-zinc-700">
+                </div>
+
+                <!-- Form Fields -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs text-zinc-400 block mb-1">Title</label>
+                        <input type="text" id="post-title" class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="text-xs text-zinc-400 block mb-1">IMDb Rating</label>
+                        <input type="text" id="post-rating" class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-zinc-400 block mb-1">Description</label>
+                        <textarea id="post-desc" rows="4" class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs text-zinc-400 block mb-1">Watch Now Link (Auto Loaded)</label>
+                        <input type="text" id="post-watch-link" readonly class="w-full bg-zinc-900/40 border border-zinc-800 text-zinc-500 rounded-xl px-4 py-2 text-sm cursor-not-allowed font-bold">
+                    </div>
+                    <!-- Hidden inputs -->
+                    <input type="hidden" id="post-img-url">
+                    <input type="hidden" id="post-movie-id">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-3 pt-2">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="copyPostText()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 border border-zinc-700">
+                            <i class="fa-regular fa-copy"></i> Copy Text
+                        </button>
+                        <button onclick="downloadPoster()" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20">
+                            <i class="fa-solid fa-download"></i> Save Image
+                        </button>
+                    </div>
+                    
+                    <!-- Done Button -->
+                    <button id="done-btn" onclick="markAsDone()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
+                        <i class="fa-regular fa-circle-check"></i> Done (Sync to Firebase)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: SETTINGS -->
+        <section id="tab-settings" class="tab-content hidden space-y-6">
+            <div class="glass p-5 rounded-2xl space-y-4">
+                <h2 class="text-lg font-semibold text-red-500 border-b border-red-500/20 pb-2"><i class="fa-solid fa-gears"></i> App Settings</h2>
+                
+                <!-- Watch Now Link Config -->
+                <div class="space-y-2">
+                    <label class="text-xs text-zinc-300 block font-medium">Default Watch Now Link</label>
+                    <input type="text" id="setting-watch-link" placeholder="https://example.com/watch" class="w-full bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500">
+                </div>
+
+                <button onclick="saveSettings()" class="w-full bg-red-600 hover:bg-red-500 text-white py-2.5 rounded-xl font-medium text-sm transition-colors mt-2">
+                    Save Changes
+                </button>
+
+                <!-- Cloud Database Management -->
+                <div class="pt-4 border-t border-zinc-800">
+                    <h3 class="text-xs text-zinc-400 mb-2">Firebase Cloud Options</h3>
+                    <button onclick="clearDoneList()" class="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> Reset & Clear Firebase List
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 left-0 right-0 glass border-t border-red-500/20 px-6 py-2.5 flex justify-around items-center z-50">
+        <button onclick="switchTab('tmdb')" id="nav-tmdb" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors">
+            <i class="fa-solid fa-compass text-lg"></i>
+            <span class="text-[10px]">TMDB</span>
+        </button>
+        <button onclick="switchTab('post')" id="nav-post" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors">
+            <i class="fa-solid fa-square-plus text-lg"></i>
+            <span class="text-[10px]">Post</span>
+        </button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors">
+            <i class="fa-solid fa-sliders text-lg"></i>
+            <span class="text-[10px]">Settings</span>
+        </button>
+    </nav>
+
+    <!-- App JavaScript Logic -->
+    <script>
+        // HARDCODED CONFIGURATIONS
+        const TMDB_API_KEY = "3dcff4c2aae103e7a50ee7935ea29af9";
+        const FIREBASE_DB_URL = "https://movie-zone-tool-default-rtdb.firebaseio.com";
+        
+        const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+        const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+
+        // Global cache to prevent single/double quote rendering issues
+        window.cachedItems = {};
+
+        // App Local States
+        let config = {
+            watchLink: localStorage.getItem('watch_now_link') || ''
+        };
+
+        let doneItemsList = []; // Firebase loaded marked completed list
+
+        // UI update for Database Status
+        function setDbStatus(statusText, isError = false) {
+            const badge = document.getElementById('db-status-badge');
+            if (badge) {
+                badge.textContent = statusText;
+                if (isError) {
+                    badge.className = "text-xs px-2 py-1 rounded bg-red-950/50 text-red-400 border border-red-500/30";
+                } else {
+                    badge.className = "text-xs px-2 py-1 rounded bg-emerald-950/50 text-emerald-400 border border-emerald-500/30";
+                }
+            }
+        }
+
+        // Fetch marked "done" movies (Non-blocking background fetch)
+        async function loadDoneMoviesFromFirebase() {
+            try {
+                const response = await fetch(`${FIREBASE_DB_URL}/done_movies.json`);
+                if (!response.ok) throw new Error("Connection failed");
+                const data = await response.json();
+                
+                if (data) {
+                    doneItemsList = Object.keys(data);
+                } else {
+                    doneItemsList = [];
+                }
+                setDbStatus("Cloud Sync Active");
+            } catch (err) {
+                console.error("Firebase fetch error: ", err);
+                setDbStatus("Local Mode (Offline)", true);
+            }
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            // UI fields initialization
+            document.getElementById('setting-watch-link').value = config.watchLink;
+            updateWatchLinkInPost();
+            
+            // Switch tab to first page
+            switchTab('tmdb');
+
+            // Fetch list
+            fetchFeeds();
+
+            // Background Load Cloud list
+            loadDoneMoviesFromFirebase().then(() => {
+                fetchFeeds(); // Reload feeds once cloud list has been downloaded
+            });
+
+            // Listeners
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            document.getElementById('search-btn').addEventListener('click', performSearch);
+            document.getElementById('close-search').addEventListener('click', clearSearch);
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-tab'));
+            document.getElementById(`nav-${tabId}`).classList.add('active-tab');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function saveSettings() {
+            const watchLink = document.getElementById('setting-watch-link').value.trim();
+            localStorage.setItem('watch_now_link', watchLink);
+            config.watchLink = watchLink;
+
+            updateWatchLinkInPost();
+            alert('Settings saved!');
+        }
+
+        function updateWatchLinkInPost() {
+            document.getElementById('post-watch-link').value = config.watchLink || 'No link configured';
+        }
+
+        // Fetch API Helper
+        async function fetchFeeds() {
+            try {
+                fetchData(`${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}`)
+                    .then(data => renderFeed(data.results, 'trending-feed'));
+                
+                fetchData(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}`)
+                    .then(data => renderFeed(data.results, 'popular-movies', 'movie'));
+
+                fetchData(`${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}`)
+                    .then(data => renderFeed(data.results, 'popular-series', 'tv'));
+            } catch (error) {
+                console.error("Error fetching feeds: ", error);
+            }
+        }
+
+        async function fetchData(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('API request failed');
+            return response.json();
+        }
+
+        // Render lists with Done filtering
+        function renderFeed(items, containerId, forcedType = null) {
+            const container = document.getElementById(containerId);
+            if (!items || items.length === 0) {
+                container.innerHTML = `<p class="text-xs text-zinc-500">No content found.</p>`;
+                return;
+            }
+
+            // Global cache to avoid string parameter injection/break issues
+            items.forEach(item => {
+                window.cachedItems[item.id] = item;
+            });
+
+            // Filter done items
+            const filteredItems = items.filter(item => !doneItemsList.includes(item.id.toString()));
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = `<p class="text-[11px] text-zinc-600 italic">All items in this section are completed.</p>`;
+                return;
+            }
+
+            container.innerHTML = filteredItems.slice(0, 5).map(item => {
+                const title = item.title || item.name || 'Untitled';
+                const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                const poster = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/150x225/222/999?text=No+Poster';
+                const year = (item.release_date || item.first_air_date || '').split('-')[0] || 'N/A';
+                
+                return `
+                    <div class="glass p-3 rounded-xl flex gap-3 items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <img src="${poster}" alt="${title}" class="w-12 h-18 object-cover rounded-lg border border-zinc-800">
+                            <div class="max-w-[180px]">
+                                <h4 class="text-sm font-semibold text-zinc-200 line-clamp-1">${title}</h4>
+                                <p class="text-xs text-zinc-400">${year} • <i class="fa-solid fa-star text-yellow-500 text-[10px]"></i> ${rating}</p>
+                            </div>
+                        </div>
+                        <button onclick="importToPost('${item.id}')" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex items-center gap-1 whitespace-nowrap">
+                            <i class="fa-solid fa-file-import"></i> Import
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Magic Search
+        async function performSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) return;
+
+            try {
+                const res = await fetchData(`${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`);
+                const resultsSection = document.getElementById('search-results-section');
+                resultsSection.classList.remove('hidden');
+                renderFeed(res.results, 'search-results');
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                alert('Search failed.');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('search-results-section').classList.add('hidden');
+            document.getElementById('search-results').innerHTML = '';
+        }
+
+        // Import using Global Cache values
+        function importToPost(id) {
+            const item = window.cachedItems[id];
+            if (!item) return;
+
+            const title = item.title || item.name || 'Untitled';
+            const rating = item.vote_average ? `${item.vote_average.toFixed(1)}/10` : '7.5/10';
+            const desc = item.overview || '';
+            const poster = item.poster_path ? `${IMAGE_BASE_URL}${item.poster_path}` : 'https://placehold.co/150x225/222/999?text=No+Poster';
+
+            document.getElementById('post-movie-id').value = id;
+            document.getElementById('post-title').value = title;
+            document.getElementById('post-rating').value = rating;
+            document.getElementById('post-desc').value = desc;
+            document.getElementById('post-img-url').value = poster;
+            
+            const previewImg = document.getElementById('poster-preview');
+            previewImg.src = poster;
+            document.getElementById('poster-preview-container').classList.remove('hidden');
+
+            switchTab('post');
+        }
+
+        // Copy Post text with requested styling format:
+        // **Titel** (bold text)
+        // IMdb Rating
+        // Description
+        // **wacth Now** (bold text)
+        function copyPostText() {
+            const title = document.getElementById('post-title').value.trim();
+            const rating = document.getElementById('post-rating').value.trim();
+            const desc = document.getElementById('post-desc').value.trim();
+            const watchLink = config.watchLink || '';
+
+            if (!title) {
+                alert('Form is empty.');
+                return;
+            }
+
+            const postOutput = `**${title}**\n\nIMDb Rating: ${rating}\n\n${desc}\n\n**Watch Now: ${watchLink}**`;
+
+            navigator.clipboard.writeText(postOutput)
+                .then(() => alert('Copied successfully!'))
+                .catch(err => console.error(err));
+        }
+
+        // Download Image
+        async function downloadPoster() {
+            const imgUrl = document.getElementById('post-img-url').value;
+            const title = document.getElementById('post-title').value || 'movie_poster';
+
+            if (!imgUrl) return;
+
+            try {
+                const response = await fetch(imgUrl);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                const safeName = title.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                link.download = `${safeName}_poster.jpg`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                window.open(imgUrl, '_blank');
+            }
+        }
+
+        // Save Movie as Completed
+        async function markAsDone() {
+            const movieId = document.getElementById('post-movie-id').value;
+            const title = document.getElementById('post-title').value;
+            const doneBtn = document.getElementById('done-btn');
+
+            if (!movieId) {
+                alert('Please import a movie first.');
+                return;
+            }
+
+            doneBtn.disabled = true;
+            doneBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Saving...`;
+
+            try {
+                const response = await fetch(`${FIREBASE_DB_URL}/done_movies/${movieId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        timestamp: Date.now()
+                    })
+                });
+
+                if (!response.ok) throw new Error("Sync failed");
+
+                if (!doneItemsList.includes(movieId)) {
+                    doneItemsList.push(movieId);
+                }
+
+                // Reset inputs
+                document.getElementById('post-movie-id').value = '';
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-rating').value = '';
+                document.getElementById('post-desc').value = '';
+                document.getElementById('post-img-url').value = '';
+                document.getElementById('poster-preview-container').classList.add('hidden');
+
+                alert(`"${title}" successfully saved and removed from feeds.`);
+
+                await fetchFeeds();
+                clearSearch();
+                switchTab('tmdb');
+
+            } catch (err) {
+                console.error("Firebase write error: ", err);
+                alert("Could not sync with database.");
+            } finally {
+                doneBtn.disabled = false;
+                doneBtn.innerHTML = `<i class="fa-regular fa-circle-check"></i> Done (Sync to Firebase)`;
+            }
+        }
+
+        // Clear All list
+        async function clearDoneList() {
+            if (confirm('Delete all records from Firebase database?')) {
+                try {
+                    const response = await fetch(`${FIREBASE_DB_URL}/done_movies.json`, {
+                        method: 'DELETE'
+                    });
+                    if (!response.ok) throw new Error("Delete failed");
+                    doneItemsList = [];
+                    alert('Cloud Database cleared.');
+                    await fetchFeeds();
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            }
+        }
+    </script>
+</body>
+  </html>
